@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint Splatter Effect</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        #canvas {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .splatter {
+            position: absolute;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: splatterAnimation 3s forwards;
+        }
+
+        #clearButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #clearButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas">
+        <button id="clearButton">Clear Canvas</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const clearButton = document.getElementById('clearButton');
+
+        // Random color generator
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Random size generator
+        function getRandomSize() {
+            return Math.floor(Math.random() * 50) + 30; // Size between 30px and 80px
+        }
+
+        // Random shape generator
+        function getRandomShape() {
+            const shapes = ['circle', 'ellipse', 'irregular'];
+            return shapes[Math.floor(Math.random() * shapes.length)];
+        }
+
+        // Random position generator
+        function getRandomPosition(x, y) {
+            const offsetX = Math.floor(Math.random() * 50) - 25;
+            const offsetY = Math.floor(Math.random() * 50) - 25;
+            return { x: x + offsetX, y: y + offsetY };
+        }
+
+        // Function to create a random splatter
+        function createSplatter(x, y) {
+            const splatter = document.createElement('div');
+            const size = getRandomSize();
+            const color = getRandomColor();
+            const shape = getRandomShape();
+            const position = getRandomPosition(x, y);
+
+            splatter.style.width = `${size}px`;
+            splatter.style.height = `${size}px`;
+            splatter.style.backgroundColor = color;
+            splatter.style.left = `${position.x - size / 2}px`;
+            splatter.style.top = `${position.y - size / 2}px`;
+
+            // Randomizing shapes
+            if (shape === 'circle') {
+                splatter.style.borderRadius = '50%';
+            } else if (shape === 'ellipse') {
+                splatter.style.borderRadius = '50% 30%';
+            } else {
+                // For irregular shapes, we will add randomness to the border-radius
+                splatter.style.borderRadius = `${Math.random() * 50}% ${Math.random() * 50}%`;
+            }
+
+            splatter.classList.add('splatter');
+            canvas.appendChild(splatter);
+
+            // Save the splatter data in localStorage
+            saveSplatterData({ x: position.x, y: position.y, size, color, shape });
+        }
+
+        // Function to save splatter data in localStorage
+        function saveSplatterData(splatter) {
+            let splatters = JSON.parse(localStorage.getItem('splatters')) || [];
+            splatters.push(splatter);
+            localStorage.setItem('splatters', JSON.stringify(splatters));
+        }
+
+        // Function to load splatters from localStorage
+        function loadSplatters() {
+            const splatters = JSON.parse(localStorage.getItem('splatters')) || [];
+            splatters.forEach(splatter => {
+                const { x, y, size, color, shape } = splatter;
+                const splatterElement = document.createElement('div');
+
+                splatterElement.style.width = `${size}px`;
+                splatterElement.style.height = `${size}px`;
+                splatterElement.style.backgroundColor = color;
+                splatterElement.style.left = `${x - size / 2}px`;
+                splatterElement.style.top = `${y - size / 2}px`;
+
+                // Randomizing shapes
+                if (shape === 'circle') {
+                    splatterElement.style.borderRadius = '50%';
+                } else if (shape === 'ellipse') {
+                    splatterElement.style.borderRadius = '50% 30%';
+                } else {
+                    splatterElement.style.borderRadius = `${Math.random() * 50}% ${Math.random() * 50}%`;
+                }
+
+                splatterElement.classList.add('splatter');
+                canvas.appendChild(splatterElement);
+            });
+        }
+
+        // Mouse click event handler for paint splatter
+        canvas.addEventListener('click', (event) => {
+            const { x, y } = event;
+            createSplatter(x, y);
+        });
+
+        // Clear canvas on button click
+        clearButton.addEventListener('click', () => {
+            const splatters = document.querySelectorAll('.splatter');
+            splatters.forEach(splatter => splatter.remove());
+            localStorage.removeItem('splatters'); // Clear the splatter data from localStorage
+        });
+
+        // Load splatters from localStorage when the page is loaded
+        window.onload = () => {
+            loadSplatters();
+        };
+    </script>
+</body>
+</html>
