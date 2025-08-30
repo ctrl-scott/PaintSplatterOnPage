@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jagged Paint Splatter</title>
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+    }
+
+    #canvas {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+
+    .splatter {
+      position: absolute;
+      opacity: 0.85;
+      pointer-events: none;
+      animation: splatterAnimation 3s forwards;
+      transition: transform 0.3s ease;
+    }
+
+    .splatter:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes splatterAnimation {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 0.85;
+      }
+    }
+
+    #clearButton {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    #clearButton:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas">
+    <button id="clearButton">Clear Canvas</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const clearButton = document.getElementById('clearButton');
+
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    function getRandomSize() {
+      return Math.floor(Math.random() * 50) + 30; // 30px to 80px
+    }
+
+    function getRandomShape() {
+      const shapes = ['circle', 'ellipse', 'jagged'];
+      return shapes[Math.floor(Math.random() * shapes.length)];
+    }
+
+    function getRandomPosition(x, y) {
+      const offsetX = Math.floor(Math.random() * 50) - 25;
+      const offsetY = Math.floor(Math.random() * 50) - 25;
+      return { x: x + offsetX, y: y + offsetY };
+    }
+
+    function generateJaggedClipPath() {
+      const points = [];
+      const numPoints = Math.floor(Math.random() * 6) + 6; // 6 to 12 points
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        const radius = 35 + Math.random() * 25; // irregular radius
+        const x = 50 + radius * Math.cos(angle); // center at 50%
+        const y = 50 + radius * Math.sin(angle);
+        points.push(`${x}% ${y}%`);
+      }
+      return `polygon(${points.join(',')})`;
+    }
+
+    function createSplatter(x, y) {
+      const splatter = document.createElement('div');
+      const size = getRandomSize();
+      const color = getRandomColor();
+      const shape = getRandomShape();
+      const position = getRandomPosition(x, y);
+
+      splatter.style.width = `${size}px`;
+      splatter.style.height = `${size}px`;
+      splatter.style.backgroundColor = color;
+      splatter.style.left = `${position.x - size / 2}px`;
+      splatter.style.top = `${position.y - size / 2}px`;
+
+      if (shape === 'circle') {
+        splatter.style.borderRadius = '50%';
+      } else if (shape === 'ellipse') {
+        splatter.style.borderRadius = '50% 30%';
+      } else if (shape === 'jagged') {
+        splatter.style.borderRadius = '0';
+        splatter.style.clipPath = generateJaggedClipPath();
+      }
+
+      splatter.classList.add('splatter');
+      canvas.appendChild(splatter);
+
+      saveSplatterData({ x: position.x, y: position.y, size, color, shape });
+    }
+
+    function saveSplatterData(splatter) {
+      let splatters = JSON.parse(localStorage.getItem('splatters')) || [];
+      splatters.push(splatter);
+      localStorage.setItem('splatters', JSON.stringify(splatters));
+    }
+
+    function loadSplatters() {
+      const splatters = JSON.parse(localStorage.getItem('splatters')) || [];
+      splatters.forEach(splatter => {
+        const { x, y, size, color, shape } = splatter;
+        const splatterElement = document.createElement('div');
+
+        splatterElement.style.width = `${size}px`;
+        splatterElement.style.height = `${size}px`;
+        splatterElement.style.backgroundColor = color;
+        splatterElement.style.left = `${x - size / 2}px`;
+        splatterElement.style.top = `${y - size / 2}px`;
+
+        if (shape === 'circle') {
+          splatterElement.style.borderRadius = '50%';
+        } else if (shape === 'ellipse') {
+          splatterElement.style.borderRadius = '50% 30%';
+        } else if (shape === 'jagged') {
+          splatterElement.style.borderRadius = '0';
+          splatterElement.style.clipPath = generateJaggedClipPath();
+        }
+
+        splatterElement.classList.add('splatter');
+        canvas.appendChild(splatterElement);
+      });
+    }
+
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      createSplatter(x, y);
+    });
+
+    clearButton.addEventListener('click', () => {
+      const splatters = document.querySelectorAll('.splatter');
+      splatters.forEach(s => s.remove());
+      localStorage.removeItem('splatters');
+    });
+
+    window.onload = () => {
+      loadSplatters();
+    };
+  </script>
+</body>
+</html>
